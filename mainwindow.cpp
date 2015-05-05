@@ -4,15 +4,19 @@
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
 {
-    /* default black is first and player1 is black*/
-    current_player = player1;
-    memset(checkerboard,0,boardsize*boardsize*sizeof(int));
+    setWindowTitle(tr("Gomoku"));
     setFixedSize(w_width,w_height);
+    createActions();
+    createMenus();
 }
 
 MainWindow::~MainWindow()
 {
-
+    delete newAct;
+    delete setPAct;
+    delete serverAct;
+    delete clientAct;
+    delete exitAct;
 }
 
 void MainWindow::paintEvent(QPaintEvent *)
@@ -46,9 +50,9 @@ void MainWindow::drawPieces()
     {
         for (j = 0; j < boardsize; j++)
         {
-            if (checkerboard[i][j] == 1)
+            if (board[i][j] == 1)
                 drawPiece(Qt::black, i, j);
-            else if (checkerboard[i][j] == 2)
+            else if (board[i][j] == 2)
                 drawPiece(Qt::white, i, j);
         }
     }
@@ -63,29 +67,62 @@ void MainWindow::drawPiece(Qt::GlobalColor color, int i, int j)
     {
         brush.setColor(color);
         painter.setBrush(brush);
-        painter.drawEllipse(QPoint((i + 1) * spacer, (j + 1) * spacer), 15, 15);
+        painter.drawEllipse(QPoint(i* spacer + 0.5*spacer + boardstart, j*spacer + spacer*0.5 + boardstart),
+                            15, 15);
     }
     painter.restore();
 }
+
+void MainWindow::createActions()
+{
+    newAct = new QAction(tr("&New"), this);
+    newAct->setStatusTip(tr("Create a new Game"));
+    connect(newAct, SIGNAL(triggered()), this, SLOT(newGame()));
+
+    setPAct = new QAction(tr("&Set Player"), this);
+    setPAct->setStatusTip(tr("Set Default Player"));
+    connect(setPAct, SIGNAL(triggered()), this, SLOT(setDefaultPlayer()));
+
+    serverAct = new QAction(tr("&Wait For Connection"), this);
+    serverAct->setStatusTip(tr("Work As Server"));
+    connect(serverAct, SIGNAL(triggered()), this, SLOT(workAsServer()));
+
+    clientAct = new QAction(tr("&Set Player"), this);
+    clientAct->setStatusTip(tr("Work As Client"));
+    connect(clientAct, SIGNAL(triggered()), this, SLOT(workAsClient()));
+
+    exitAct = new QAction(tr("&Exit"), this);
+    exitAct->setStatusTip(tr("Set Default Player"));
+    connect(exitAct, SIGNAL(triggered()), this, SLOT(close()));
+}
+
+void MainWindow::createMenus()
+{
+    fileMenu = menuBar()->addMenu(tr("&File"));
+    fileMenu->addAction(newAct);
+    fileMenu->addAction(serverAct);
+    fileMenu->addAction(clientAct);
+    fileMenu->addAction(exitAct);
+}
+
 
 void MainWindow::mouseReleaseEvent(QMouseEvent *e)
 {
     int x, y;
     if(e->x() >= boardstart && e->x() < boardend &&
-       e->y() >= boardstart && e->y() < boardend)
+       e->y() >= boardstart && e->y() < boardend && !endFlag)
     {
         x = (e->x() - boardstart) / spacer;
         y = (e->y() - boardstart) / spacer;
-        if (!checkerboard[x][y])
+        if (!isPiece(x, y))
         {
-            checkerboard[x][y] = current_player;
-            last_player = current_player;
-            current_player = current_player==player1?player2:player1;
+            putPiece(x, y);
+            switchPlayer();
         }
         if(isgameEnd(x, y))
         {
             update();
-            setEnabled(false);
+            //setEnabled(false);
             QMessageBox::information(this, "Win",
                                      last_player==player1?"player1 Win":"player2 Win",
                                      QMessageBox::Ok);
@@ -93,55 +130,25 @@ void MainWindow::mouseReleaseEvent(QMouseEvent *e)
     }
     update();
 }
-int MainWindow::isgameEnd(int x, int y)
+
+void MainWindow::newGame()
 {
-    return isp1Win(x,y)||isp2Win(x,y);
+    initBoard();
+    update();
 }
-int MainWindow::isp1Win(int x, int y)
+
+void MainWindow::setDefaultPlayer()
 {
-    int i;
-    for(i=0;i<5;i++)
-    {
-        if(y - i >= 0 &&
-           y + 4 - i <= 15 &&
-           checkerboard[x][y - i] == checkerboard[x][y + 1 - i] &&
-           checkerboard[x][y - i] == checkerboard[x][y + 2 - i] &&
-           checkerboard[x][y - i] == checkerboard[x][y + 3 - i] &&
-           checkerboard[x][y - i] == checkerboard[x][y + 4 - i])
-        return 1;
-        if(x - i >= 0 &&
-             x + 4 - i <= 15 &&
-             checkerboard[x - i][y] == checkerboard[x + 1 - i][y] &&
-             checkerboard[x - i][y] == checkerboard[x + 2 - i][y] &&
-             checkerboard[x - i][y] == checkerboard[x + 3 - i][y] &&
-             checkerboard[x - i][y] == checkerboard[x + 4 - i][y])
-        return 1;
-    }
-    return 0;
+
 }
-int MainWindow::isp2Win(int x, int y)
+
+void MainWindow::workAsServer()
 {
-    int i;
-    for(i=0;i<5;i++)
-    {
-        if(x - i >= 0 &&
-           y - i >= 0 &&
-           x + 4 - i <= 15 &&
-           y + 4 - i <= 15 &&
-           checkerboard[x - i][y - i] == checkerboard[x + 1 - i][y + 1 - i] &&
-           checkerboard[x - i][y - i] == checkerboard[x + 2 - i][y + 2 - i] &&
-           checkerboard[x - i][y - i] == checkerboard[x + 3 - i][y + 3 - i] &&
-           checkerboard[x - i][y - i] == checkerboard[x + 4 - i][y + 4 - i])
-           return 1;
-        if(x + i <= 15 &&
-                   y - i >= 0 &&
-                   x - 4 + i >= 0 &&
-                   y + 4 - i <= 15 &&
-                   checkerboard[x + i][y - i] == checkerboard[x - 1 + i][y + 1 - i] &&
-                   checkerboard[x + i][y - i] == checkerboard[x - 2 + i][y + 2 - i] &&
-                   checkerboard[x + i][y - i] == checkerboard[x - 3 + i][y + 3 - i] &&
-                   checkerboard[x + i][y - i] == checkerboard[x - 4 + i][y + 4 - i])
-           return 1;
-    }
-    return 0;
+    serverDialog = new ServerDialog();
+    serverDialog->show ();
+}
+
+void MainWindow::workAsClient()
+{
+
 }
