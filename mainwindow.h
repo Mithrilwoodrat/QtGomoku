@@ -5,6 +5,8 @@
 #include <QtGui>
 #include <QPointer>
 #include <QMenu>
+#include <QMessageBox>
+#include <QMenuBar>
 #include "gomoku.h"
 #include "serverdialog.h"
 

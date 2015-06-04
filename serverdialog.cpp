@@ -54,7 +54,7 @@ void ServerDialog::getConnected()
 void ServerDialog::getText()
 {
     msg = rwSocket->readAll ().constData ();
-    qDebug (msg.toAscii ().data ());
+    //qDebug (msg.toAscii ().data ());
     message->setText (msg);
 }
 
