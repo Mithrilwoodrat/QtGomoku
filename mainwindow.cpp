@@ -32,7 +32,7 @@ void MainWindow::drawBoard()
     painter.save();
     painter.setRenderHint(QPainter::Antialiasing, true);
     int i;
-    for(i=0;i<=boardsize;i++)
+    for(i=0;i<=game.boardsize;i++)
     {
         painter.drawLine(boardstart, boardstart + i * spacer,
                          boardend, boardstart + i * spacer);
@@ -46,13 +46,13 @@ void MainWindow::drawPieces()
 {
     painter.save();
     int i,j;
-    for (i = 0; i < boardsize; i++)
+    for (i = 0; i < game.boardsize; i++)
     {
-        for (j = 0; j < boardsize; j++)
+        for (j = 0; j < game.boardsize; j++)
         {
-            if (board[i][j] == 1)
+            if (game.getPiece (i, j) == game.player1)
                 drawPiece(Qt::black, i, j);
-            else if (board[i][j] == 2)
+            else if (game.getPiece (i, j) == game.player2)
                 drawPiece(Qt::white, i, j);
         }
     }
@@ -110,21 +110,22 @@ void MainWindow::mouseReleaseEvent(QMouseEvent *e)
 {
     int x, y;
     if(e->x() >= boardstart && e->x() < boardend &&
-       e->y() >= boardstart && e->y() < boardend && !endFlag)
+       e->y() >= boardstart && e->y() < boardend && !game.isgameEnd ())
     {
         x = (e->x() - boardstart) / spacer;
         y = (e->y() - boardstart) / spacer;
-        if (!isPiece(x, y))
+        if (!game.isPiece(x, y))
         {
-            putPiece(x, y);
-            switchPlayer();
+            game.putPiece(x, y);
+            game.switchPlayer();
         }
-        if(isgameEnd(x, y))
+        if(game.isWin(x, y))
         {
+            game.setEndFlag ();
             update();
             //setEnabled(false);
             QMessageBox::information(this, "Win",
-                                     last_player==player1?"player1 Win":"player2 Win",
+                                     game.getLast_player () == game.player1?"player1 Win":"player2 Win",
                                      QMessageBox::Ok);
         }
     }
@@ -133,7 +134,7 @@ void MainWindow::mouseReleaseEvent(QMouseEvent *e)
 
 void MainWindow::newGame()
 {
-    initBoard();
+    game.initBoard();
     update();
 }
 

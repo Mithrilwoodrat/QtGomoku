@@ -8,7 +8,7 @@
 #include "gomoku.h"
 #include "serverdialog.h"
 
-class MainWindow : public QMainWindow,public Gomoku
+class MainWindow : public QMainWindow
 {
     Q_OBJECT
 
@@ -24,6 +24,7 @@ private:
     static const int boardstart = 30;/*(windows size - board size)/2*/
     static const int boardend = 630;/* windows size - (windows size - board size)/2*/
     static const int spacer = 40; /* boardwith / boardsize*/
+    Gomoku game;
     QPainter painter;
     void createActions();
     void createMenus();
